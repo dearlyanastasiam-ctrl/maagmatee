@@ -23,11 +23,16 @@ Future<void> main() async {
   } catch (e) {
     debugPrint('Gagal init notifikasi: $e');
   }
+
+  // Bingkai HP hanya muncul di web DAN layar lebar (laptop/desktop),
+  // untuk demo/presentasi. Di browser HP & aplikasi asli tampil normal.
+  final view = WidgetsBinding.instance.platformDispatcher.views.first;
+  final logicalWidth = view.physicalSize.width / view.devicePixelRatio;
+  final showFrame = kIsWeb && logicalWidth > 700;
+
   runApp(
-    // Device Preview hanya aktif di web (untuk demo/presentasi).
-    // Di HP asli aplikasi tampil normal tanpa panel.
     DevicePreview(
-      enabled: kIsWeb,
+      enabled: showFrame,
       defaultDevice: Devices.ios.iPhone13,
       builder: (context) => MaagMateApp(showOnboarding: !done),
     ),
