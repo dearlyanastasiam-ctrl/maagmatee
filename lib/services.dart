@@ -208,7 +208,9 @@ class Notif {
   static Future<void> apply(Reminder r) async {
     if (kIsWeb) return;
     await _plugin.cancel(r.id);
+    await AlarmLaunch.cancel(r.id);
     if (!r.on) return;
+    await AlarmLaunch.schedule(r.id, _next(r.hour, r.minute), daily: true);
     await _schedule(
       r.id,
       'Waktunya ${r.label}',
@@ -234,11 +236,13 @@ class Notif {
       if (enabled == false) {
         return 'Izin notifikasi MATI. Buka Pengaturan > Aplikasi > MaagMate > Notifikasi, lalu aktifkan.';
       }
+      final when = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5));
+      await AlarmLaunch.schedule(999, when);
       await _schedule(
         999,
         'Alarm uji coba',
         'Foto makananmu untuk mematikan alarm.',
-        tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5)),
+        when,
         '999',
       );
       return null;
@@ -318,6 +322,7 @@ class Notif {
   static Future<void> cancel(int id) async {
     if (kIsWeb) return;
     await _plugin.cancel(id);
+    await AlarmLaunch.cancel(id);
   }
 }
 
@@ -627,6 +632,49 @@ class Nutrition {
       }
       throw Exception('Jawaban AI tidak bisa dibaca.\n[$why]');
     }
+  }
+}
+
+/// Saat alarm berbunyi, langsung membuka MaagMate (lalu kamera) walau HP sedang
+/// terbuka dan app di latar. Native-nya dipasang oleh tool/patch_android.py.
+/// Butuh izin "Tampil di atas aplikasi lain"; tanpa itu Android hanya
+/// menampilkan notifikasi. Di web / bila native belum ada: tidak berbuat apa-apa.
+class AlarmLaunch {
+  static const _ch = MethodChannel('maagmate/launch');
+
+  static Future<void> schedule(int id, DateTime when, {bool daily = false}) async {
+    if (kIsWeb) return;
+    try {
+      await _ch.invokeMethod('schedule', {
+        'id': id,
+        'at': when.millisecondsSinceEpoch,
+        'daily': daily,
+      });
+    } catch (_) {}
+  }
+
+  static Future<void> cancel(int id) async {
+    if (kIsWeb) return;
+    try {
+      await _ch.invokeMethod('cancel', {'id': id});
+    } catch (_) {}
+  }
+
+  static Future<bool> canOverlay() async {
+    if (kIsWeb) return true;
+    try {
+      return (await _ch.invokeMethod<bool>('canOverlay')) ?? true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// Membuka pengaturan izin bila belum diberikan.
+  static Future<void> requestOverlay() async {
+    if (kIsWeb) return;
+    try {
+      await _ch.invokeMethod('requestOverlay');
+    } catch (_) {}
   }
 }
 

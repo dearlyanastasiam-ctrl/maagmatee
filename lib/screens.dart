@@ -1450,6 +1450,28 @@ class _RemindersPageState extends State<RemindersPage> {
                     builder: (_) => const RingScreen(id: 999)));
                 return;
               }
+              if (!await AlarmLaunch.canOverlay()) {
+                if (!mounted) return;
+                final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                          title: const Text('Izin kamera otomatis'),
+                          content: const Text(
+                              'Agar kamera langsung terbuka saat alarm berbunyi (walau HP sedang dipakai), aktifkan "Tampil di atas aplikasi lain" untuk MaagMate.'),
+                          actions: [
+                            TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Nanti')),
+                            FilledButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Buka pengaturan')),
+                          ],
+                        ));
+                if (ok == true) {
+                  await AlarmLaunch.requestOverlay();
+                  return;
+                }
+              }
               final err = await Notif.test();
               if (!mounted) return;
               if (err != null) {

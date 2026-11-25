@@ -68,6 +68,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() => _busy = true);
     await Store.setOnboarded();
     await Notif.requestPermissions(); // izin notifikasi & alarm, setelah penjelasan
+    await AlarmLaunch.requestOverlay(); // izin 'tampil di atas aplikasi lain' agar kamera langsung terbuka
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeShell()));

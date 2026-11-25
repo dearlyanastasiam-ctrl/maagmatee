@@ -37,6 +37,9 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Buat ikon aplikasi
+        run: dart run flutter_launcher_icons
+
       - name: Build APK release
         run: flutter build apk --release --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
 
